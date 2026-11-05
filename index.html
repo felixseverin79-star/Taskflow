@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FactureFaso – Créez vos factures en FCFA</title>
+<style>
+:root{--bg:#eaf0ea;--ink:#14261b;--mute:#5d6f63;--green:#0a7a3d;--gold:#f2c230;--line:#cfdacf;--card:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Trebuchet MS",Verdana,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+header{background:var(--green);color:#fff;padding:20px 16px;border-bottom:5px solid var(--gold)}
+header h1{font-family:Georgia,serif;font-size:26px}
+header p{font-size:14px;opacity:.9;margin-top:4px}
+main{max-width:760px;margin:0 auto;padding:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+h2{font-size:17px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mute);margin:8px 0 3px}
+input,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.line{display:grid;grid-template-columns:1fr;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+.line .nums{display:grid;grid-template-columns:80px 1fr 44px;gap:6px}
+button{font:inherit;border:0;border-radius:6px;padding:12px 16px;cursor:pointer;background:var(--green);color:#fff;font-weight:bold}
+button.alt{background:#fff;color:var(--green);border:1px solid var(--green)}
+button.x{background:#fff;color:#b3261e;border:1px solid var(--line);padding:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.check{display:flex;align-items:center;gap:8px;margin-top:10px}
+.check input{width:auto}
+#invoice{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;overflow-x:auto}
+#invoice h3{font-family:Georgia,serif;font-size:28px;color:var(--green)}
+.top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.small{font-size:13px;color:var(--mute)}
+.who{margin-bottom:16px}
+table{width:100%;border-collapse:collapse;margin-bottom:12px}
+th,td{border:1px solid #8fa396}
+th{white-space:nowrap}
+td:first-child{overflow-wrap:anywhere}
+td:not(:first-child){white-space:nowrap}
+.logo{max-width:140px;max-height:70px;display:block;margin:0 0 6px auto}
+@media(max-width:520px){#invoice{padding:14px}#invoice h3{font-size:24px}}
+th{text-align:left;font-size:13px;padding:8px;background:var(--bg)}
+td{padding:8px;font-size:14px}
+@media(max-width:520px){th,td{padding:6px 4px;font-size:12px}}
+.r{text-align:right}
+.tot{margin-left:auto;width:min(100%,300px)}
+.tot div{display:flex;justify-content:space-between;padding:5px 0}
+.tot .ttc{background:var(--gold);padding:9px 10px;font-weight:bold;border-radius:6px;margin-top:4px}
+.note{margin-top:16px;font-size:13px;white-space:pre-line}
+@media print{
+ body *{visibility:hidden}
+ #invoice,#invoice *{visibility:visible}
+ #invoice{position:absolute;left:0;top:0;width:100%;border:0}
+ header{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+ <h1>FactureFaso</h1>
+ <p>Créez une facture claire en FCFA, prête à envoyer à votre client.</p>
+</header>
+<main>
+ <section>
+  <h2>Votre entreprise</h2>
+  <label for="eNom">Nom de l’entreprise</label><input id="eNom" autocomplete="organization">
+  <div class="row">
+   <div><label for="eIfu">IFU</label><input id="eIfu"></div>
+   <div><label for="eRccm">RCCM (si vous en avez un)</label><input id="eRccm"></div>
+  </div>
+  <label for="eAdr">Adresse</label><input id="eAdr" autocomplete="street-address">
+  <label for="eTel">Téléphone</label><input id="eTel" type="tel" autocomplete="tel">
+  <label for="logo">Logo (facultatif)</label><input id="logo" type="file" accept="image/*">
+  <div class="actions"><button type="button" class="alt" id="noLogo">Retirer le logo</button></div>
+ </section>
+
+ <section>
+  <h2>Votre client</h2>
+  <label for="cNom">Nom du client</label><input id="cNom">
+  <div class="row">
+   <div><label for="cIfu">IFU du client (facultatif)</label><input id="cIfu"></div>
+   <div><label for="cAdr">Adresse</label><input id="cAdr"></div>
+  </div>
+ </section>
+
+ <section>
+  <h2>La facture</h2>
+  <div class="row">
+   <div><label for="fNum">Numéro</label><input id="fNum"></div>
+   <div><label for="fDate">Date</label><input id="fDate" type="date"></div>
+  </div>
+  <label for="fEch">Échéance de paiement (facultatif)</label><input id="fEch" type="date">
+ </section>
+
+ <section>
+  <h2>Produits et services</h2>
+  <div id="lines"></div>
+  <div class="actions"><button type="button" class="alt" id="addLine">Ajouter une ligne</button></div>
+  <label class="check"><input type="checkbox" id="useTva" checked> Appliquer la TVA</label>
+  <label for="tva">Taux de TVA (%)</label><input id="tva" type="number" min="0" step="any" value="18" inputmode="decimal">
+  <label for="notes">Modes de paiement et remarques</label>
+  <textarea id="notes" rows="3" placeholder="Ex. : Orange Money 07 00 00 00, paiement à 15 jours"></textarea>
+ </section>
+
+ <h2 style="margin:6px 0 10px">Aperçu</h2>
+ <div id="invoice"></div>
+ <div class="actions">
+  <button type="button" id="print">Télécharger en PDF</button>
+  <button type="button" class="alt" id="next">Nouvelle facture</button>
+ </div>
+ <p class="small" style="margin-top:10px">Pour le PDF, choisissez « Enregistrer au format PDF » dans la fenêtre d’impression. Vos informations d’entreprise restent enregistrées sur cet appareil.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => new Intl.NumberFormat('fr-FR').format(Math.round(n)) + ' FCFA';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SAVED = ['eNom','eIfu','eRccm','eAdr','eTel','notes','tva'];
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+};
+
+let logo = store.get('ff_logo') || '';
+
+function nextNumber(){
+  const n = (parseInt(store.get('ff_n')) || 0) + 1;
+  return 'FAC-' + new Date().getFullYear() + '-' + String(n).padStart(3,'0');
+}
+
+function addLine(d='', q=1, p=''){
+  const r = document.createElement('div');
+  r.className = 'line';
+  r.innerHTML = '<input class="d" placeholder="Désignation" value="' + esc(d) + '">' +
+    '<div class="nums"><input class="q" type="number" min="0" step="any" value="' + q + '" inputmode="decimal" aria-label="Quantité">' +
+    '<input class="p" type="number" min="0" step="any" placeholder="Prix unitaire (FCFA)" value="' + p + '" inputmode="decimal" aria-label="Prix unitaire">' +
+    '<button type="button" class="x" aria-label="Supprimer la ligne">×</button></div>';
+  r.querySelector('.x').onclick = () => { r.remove(); render(); };
+  r.addEventListener('input', render);
+  $('lines').appendChild(r);
+}
+
+function render(){
+  const rows = [...document.querySelectorAll('.line')].map(r => ({
+    d: r.querySelector('.d').value,
+    q: parseFloat(r.querySelector('.q').value) || 0,
+    p: parseFloat(r.querySelector('.p').value) || 0
+  })).filter(r => r.d || r.p);
+  const ht = rows.reduce((s,r) => s + r.q * r.p, 0);
+  const rate = parseFloat($('tva').value) || 0;
+  const tva = $('useTva').checked ? ht * rate / 100 : 0;
+  const v = id => esc($(id).value);
+  const dt = id => $(id).value ? new Date($(id).value + 'T00:00:00').toLocaleDateString('fr-FR') : '';
+  const ids = (ifu, rccm) => (ifu ? 'IFU : ' + ifu : '') + (ifu && rccm ? ' · ' : '') + (rccm ? 'RCCM : ' + rccm : '');
+
+  $('invoice').innerHTML =
+    '<div class="top"><div><h3>FACTURE</h3><div class="small">N° ' + v('fNum') + '<br>Date : ' + dt('fDate') +
+    ($('fEch').value ? '<br>Échéance : ' + dt('fEch') : '') + '</div></div>' +
+    '<div class="r">' + (logo ? '<img class="logo" alt="Logo" src="' + logo + '">' : '') + '<strong>' + v('eNom') + '</strong><div class="small">' + esc(ids($('eIfu').value, $('eRccm').value)) +
+    '<br>' + v('eAdr') + '<br>' + v('eTel') + '</div></div></div>' +
+    '<div class="who"><div class="small">Facturé à</div><strong>' + v('cNom') + '</strong><div class="small">' +
+    ($('cIfu').value ? 'IFU : ' + v('cIfu') + '<br>' : '') + v('cAdr') + '</div></div>' +
+    '<table><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">Prix unitaire</th><th class="r">Total</th></tr></thead><tbody>' +
+    rows.map(r => '<tr><td>' + esc(r.d) + '</td><td class="r">' + r.q + '</td><td class="r">' + fmt(r.p) + '</td><td class="r">' + fmt(r.q * r.p) + '</td></tr>').join('') +
+    '</tbody></table><div class="tot"><div><span>Total HT</span><span>' + fmt(ht) + '</span></div>' +
+    ($('useTva').checked ? '<div><span>TVA (' + rate + ' %)</span><span>' + fmt(tva) + '</span></div>' : '') +
+    '<div class="ttc"><span>Total à payer</span><span>' + fmt(ht + tva) + '</span></div></div>' +
+    ($('notes').value ? '<div class="note">' + v('notes') + '</div>' : '') +
+    '<div class="small" style="margin-top:16px">Montants en francs CFA (XOF).</div>';
+
+  SAVED.forEach(id => store.set('ff_' + id, $(id).value));
+}
+
+function newInvoice(){
+  const n = (parseInt(store.get('ff_n')) || 0) + 1;
+  store.set('ff_n', n);
+  ['cNom','cIfu','cAdr','fEch'].forEach(id => $(id).value = '');
+  $('lines').innerHTML = '';
+  addLine();
+  $('fNum').value = nextNumber();
+  $('fDate').value = new Date().toISOString().slice(0,10);
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+SAVED.forEach(id => { const s = store.get('ff_' + id); if (s !== null) $(id).value = s; });
+$('fNum').value = nextNumber();
+$('fDate').value = new Date().toISOString().slice(0,10);
+addLine();
+document.querySelectorAll('main input:not(.q):not(.p):not(.d), main textarea').forEach(el => el.addEventListener('input', render));
+$('useTva').addEventListener('change', render);
+$('addLine').onclick = () => addLine();
+$('print').onclick = () => window.print();
+$('next').onclick = newInvoice;
+$('logo').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => {
+    const k = Math.min(1, 300 / img.width);
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * k);
+    c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    logo = c.toDataURL('image/png');
+    store.set('ff_logo', logo);
+    URL.revokeObjectURL(img.src);
+    render();
+  };
+  img.src = URL.createObjectURL(f);
+});
+$('noLogo').onclick = () => { logo = ''; store.set('ff_logo', ''); $('logo').value = ''; render(); };
+render();
+</script>
+</body>
+</html>
